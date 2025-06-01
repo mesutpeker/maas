@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maaş Hesaplama Uygulaması</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"] {
+            padding-right: 40px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .currency {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-weight: 600;
+        }
+
+        .percent {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-weight: 600;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #e1e1e1;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .new-salary {
+            color: #28a745 !important;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            margin-top: 10px;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Maaş Hesaplama</h1>
+        
+        <form id="salaryForm">
+            <div class="form-group">
+                <label for="realSalary">Gerçek Maaşım</label>
+                <div class="input-group">
+                    <input type="text" id="realSalary" placeholder="15.000" required>
+                    <span class="currency">₺</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="declaredSalary">Söylediğim Maaş</label>
+                <div class="input-group">
+                    <input type="text" id="declaredSalary" placeholder="20.000" required>
+                    <span class="currency">₺</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="raiseRate">Zam Oranı</label>
+                <div class="input-group">
+                    <input type="number" id="raiseRate" step="0.01" placeholder="10" required>
+                    <span class="percent">%</span>
+                </div>
+            </div>
+
+            <button type="submit">Hesapla</button>
+            <button type="button" class="clear-btn" onclick="clearForm()">Temizle</button>
+        </form>
+
+        <div class="results" id="results">
+            <div class="result-item">
+                <span class="result-label">Mevcut Gerçek Maaş:</span>
+                <span class="result-value" id="currentReal">0 ₺</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Mevcut Söylenen Maaş:</span>
+                <span class="result-value" id="currentDeclared">0 ₺</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Yeni Gerçek Maaş:</span>
+                <span class="result-value new-salary" id="newReal">0 ₺</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Yeni Söylenen Maaş:</span>
+                <span class="result-value new-salary" id="newDeclared">0 ₺</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('salaryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            calculateSalaries();
+        });
+
+        // Maaş inputları için otomatik formatla
+        function formatInput(input) {
+            let value = input.value.replace(/\./g, '');
+            if (value && !isNaN(value)) {
+                input.value = parseInt(value).toLocaleString('tr-TR');
+            }
+        }
+
+        // Input eventleri
+        document.getElementById('realSalary').addEventListener('input', function() {
+            formatInput(this);
+        });
+
+        document.getElementById('declaredSalary').addEventListener('input', function() {
+            formatInput(this);
+        });
+
+        function calculateSalaries() {
+            const realSalaryInput = document.getElementById('realSalary').value.replace(/\./g, '');
+            const declaredSalaryInput = document.getElementById('declaredSalary').value.replace(/\./g, '');
+            const raiseRate = parseFloat(document.getElementById('raiseRate').value);
+
+            const realSalary = parseFloat(realSalaryInput);
+            const declaredSalary = parseFloat(declaredSalaryInput);
+
+            if (isNaN(realSalary) || isNaN(declaredSalary) || isNaN(raiseRate)) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+
+            // Hesaplamalar
+            const newRealSalary = realSalary * (1 + raiseRate / 100);
+            const newDeclaredSalary = declaredSalary * (1 + raiseRate / 100);
+
+            // Sonuçları göster
+            document.getElementById('currentReal').textContent = formatCurrency(realSalary);
+            document.getElementById('currentDeclared').textContent = formatCurrency(declaredSalary);
+            document.getElementById('newReal').textContent = formatCurrency(newRealSalary);
+            document.getElementById('newDeclared').textContent = formatCurrency(newDeclaredSalary);
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function formatCurrency(amount) {
+            return parseInt(amount).toLocaleString('tr-TR') + ' ₺';
+        }
+
+        function clearForm() {
+            document.getElementById('salaryForm').reset();
+            document.getElementById('results').style.display = 'none';
+        }
+
+        // Enter tuşu ile hesaplama
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculateSalaries();
+            }
+        });
+    </script>
+</body>
+</html>
